@@ -4,6 +4,7 @@ import com.cydeo.utils.TypiCodeTestBase;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.internal.common.assertion.Assertion;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
@@ -60,11 +61,87 @@ public class APITask1 extends TypiCodeTestBase {
        assertTrue(response.getHeaders().hasHeaderWithName("Date"));
 
         //- And header "X-Powered-By" value is "Express"
+        assertEquals("Express", response.getHeader("X-Powered-By"));
 
         //- And header "X-Ratelimit-Limit" value is 1000
+        assertEquals("1000", response.getHeader("X-Ratelimit-Limit"));
         //- And header "Age" value is more than 100
-        //
+        String age = response.getHeader("Age");
+        assertTrue(Integer.parseInt(age)>=100);
+
+        Integer ageWithValueOf = Integer.valueOf(response.getHeader("Age"));
+
+
         //- And header "NEL" value contains "success_fraction"
+        assertTrue(response.getHeader("NEL").contains("success_fraction"));
+
+    }
+    @Test
+    public void task3(){
+        //- Given accept type is Json
+        //- Path param "id" value is 12345
+        //- When user sends request to  https://jsonplaceholder.typicode.com/posts/{id}
+        //- Then status code is 404
+        //
+        //- And json body contains "{}"
+        Response response = given().accept(ContentType.JSON).pathParam("id", 12345)
+                .when().get("post/{id}");
+
+        assertEquals(404, response.getStatusCode());
+        assertEquals("{}", response.asString());
+    }
+
+    @Test
+    public void task4(){
+        //- Given accept type is Json
+        //- Path param "id" value is 2
+        //- When user sends request to  https://jsonplaceholder.typicode.com/posts/%7Bid%7D/comments
+        //- Then status code is 200
+        //
+        //- And header Content - Type is Json
+        //- And json body contains "Presley.Mueller@myrl.com",  "Dallas@ole.me" , "Mallory_Kunze@marie.org"
+        Response response = given().accept(ContentType.JSON)
+                .pathParam("id", 2).
+                when().get("/posts/{id}/comments");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertTrue(response.asString().contains("Presley.Mueller@myrl.com"));
+        assertTrue(response.asString().contains("Dallas@ole.me" ));
+        assertTrue(response.asString().contains("Mallory_Kunze@marie.org"));
+
+        String email = response.path("[0].email");
+        System.out.println(email);
+
+        JsonPath jsonPath = response.jsonPath();
+        System.out.println(jsonPath.getString("[0].email"));
+        System.out.println(jsonPath.getString("email.[0]"));
+
+        System.out.println(jsonPath.getString("email.[1]"));
+
+        System.out.println(jsonPath.getString("email.[2]"));
+    }
+
+    @Test
+    public void task5() {
+        //- Given accept type is Json
+        //- Query Param "postId" value is 1
+        //- When user sends request to  https://jsonplaceholder.typicode.com/comments
+        //- Then status code is 200
+        //
+        //- And header Content - Type is Json
+        //
+        //- And header "Connection" value is "keep-alive"
+        //- And json body contains "Lew@alysha.tv"
+        Response response = given().accept(ContentType.JSON)
+                .queryParam("postId", 1)
+                .when().get("/comments");
+
+        assertEquals(200, response.getStatusCode());
+
+        assertEquals("keep-alive", response.getHeader("Connection"));
+
+        assertTrue(response.asString().contains("Lew@alysha.tv"));
 
     }
 }
